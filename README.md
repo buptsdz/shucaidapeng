@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 222
 
 ## Project setup
@@ -17,3 +18,6 @@ npm run build
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+=======
+# shucaidapeng
+>>>>>>> 328fccff0946fdf0153763e60c069313d09880f7
