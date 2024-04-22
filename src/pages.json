@@ -5,6 +5,12 @@
 			"style": {
 				"navigationBarTitleText": "uni-app"
 			}
+		},
+		{
+			"path": "pages/connect/connect",
+			"style": {
+				"navigationBarTitleText": "connect"
+			}
 		}
 	],
 	"globalStyle": {

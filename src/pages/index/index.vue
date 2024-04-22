@@ -2,7 +2,7 @@
 	<view class="content">
 		<view class="switch">
 			<text class="label-text">开关：</text>
-			<switch @tap="cli()"></switch>
+			<switch @tap="cli()" :checked="this.switch"></switch>
 		</view>
 		<view class="connect">
 			连接状态：
@@ -12,7 +12,24 @@
 		</view>
 		<view class="send">
 			<text class="label-text">发送：</text>
-			<button @tap="cli2()">click</button>
+			<button @tap="cli2()">发送浇水信息</button>
+		</view>
+		<view class="dapeng-data">
+			<view class="temp">
+				大棚温度：{{ tempFormatted }}
+			</view>
+			<view class="soilwet">
+				土壤湿度：{{ soilHumidityFormatted }}
+			</view>
+			<view class="wet">
+				大棚湿度：{{ airHumidityFormatted }}
+			</view>
+			<view class="light">
+				光照强度：{{ lightFormatted }}
+			</view>
+			<view class="lasttime">
+				数据更新时间：{{this.lasttime}}
+			</view>
 		</view>
 	</view>
 </template>
@@ -41,79 +58,117 @@
 		data() {
 			return {
 				client: null,
-				switch: false,
-				state: false, //可变状态
-				statecheck: 0, //防抖后状态
-				timeoutId: null // 用于存储setTimeout返回的ID
+				switch: false, //开关状态
+				state: false, //连接状态
+				timeoutId: null, // 用于存储setTimeout返回的ID
+				light: '', //光照强度
+				soilHumidity: '', //土壤湿度
+				airHumidity: '', //空气湿度
+				temp: '', //温度
+				time: null,//接收到的esp8266的时间
+				publishwater:false,//是否正在发送浇水指令
 			}
 		},
 		computed: {
+			//最后一次更新时间
+			lasttime() {
+				if (this.time == null) {
+					return null
+				} else {
+					const timestamp = this.time;
+					// 创建 Date 对象，将时间戳传递给构造函数
+					const date = new Date(timestamp);
+					// 使用 Date 对象的方法获取年、月、日、时、分、秒等信息
+					const year = date.getFullYear();
+					const month = date.getMonth() + 1; // 月份从 0 开始，需要加 1
+					const day = date.getDate();
+					const hours = date.getHours();
+					const minutes = date.getMinutes();
+					const seconds = date.getSeconds();
+
+					// 构造时间字符串，格式为 yyyy-MM-dd HH:mm:ss
+					const formattedTime =
+						`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+					return formattedTime; // 输出格式化后的时间字符串
+				}
+			},
+			tempFormatted() {
+				return this.temp ? `${this.temp.toFixed(2)}℃` : '暂无数据';
+			},
+			soilHumidityFormatted() {
+				return this.soilHumidity ? this.soilHumidity.toFixed(2) : '暂无数据';
+			},
+			airHumidityFormatted() {
+				return this.airHumidity ? this.airHumidity.toFixed(2) : '暂无数据';
+			},
+			lightFormatted() {
+				return this.light ? this.light.toFixed(2) : '暂无数据';
+			},
 			labelClass() {
 				// 根据statecheck的值返回对应的类名
-				switch (this.statecheck) {
-					case 0:
+				switch (this.state) {
+					case false:
 						return 'bad'; // 断开
-					case 1:
+					case true:
 						return 'good'; // 良好
-					case 2:
-						return 'neutral'; // 网络差
-					default:
-						return '';
 				}
+				return 0
 			},
 			labelText() {
 				// 根据statecheck的值返回对应的文本
-				switch (this.statecheck) {
-					case 0:
+				switch (this.state) {
+					case false:
 						return '断开';
-					case 1:
+					case true:
 						return '良好';
-					case 2:
-						return '网络缓冲'; // 或者任何你想表示的中性状态的文本
-					default:
-						return '';
 				}
+				return 0
 			}
 		},
 		onLoad() {
+			device.on('connect', () => {
+				console.log('connect successfully!');
+			});
 			device.on('offline', () => {
 				console.log("断开连接");
-				this.state = false;
+			});
+			device.on('error', (error) => {
+				console.error(error);
+			});
+			device.onProps((cmd) => {
+				console.log('>>>onProps', cmd); // 打印完整的属性设置消息
+				if (this.state) {
+					for (var key in cmd.items) {
+						switch (key) {
+							case 'Light':
+								this.light = cmd.items[key].value;
+								break;
+							case 'Soil':
+								this.soilHumidity = cmd.items[key].value;
+								break;
+							case 'Humidity':
+								this.airHumidity = cmd.items[key].value;
+								break;
+							case 'temperature':
+								this.temp = cmd.items[key].value;
+								break;
+							default:
+								// 如果有其他属性，可以在这里处理
+								break;
+						}
+					}
+					this.time = cmd.items['Light'].time; //从 ESP8266 设备采集的时间戳
+				}
 			});
 		},
 		unonLoad() {
 			device.end();
 		},
-		watch: {
-			// 监听state的变化
-			state(newVal, oldVal) {
-				console.log("state:", this.state)
-				if (newVal !== oldVal) {
-					// 如果state变化，先清除之前的倒计时（如果有）
-					if (this.timeoutId !== null) {
-						clearTimeout(this.timeoutId);
-					}
-					// 开启一个新的倒计时
-					if (this.switch == true) {
-						this.timeoutId = setTimeout(() => {
-							// 倒计时结束后的操作
-							if(newVal==0){
-								this.statecheck = 2;
-							}
-							if(newVal==1){
-								this.statecheck = 1;
-							}
-							console.log("statecheck:", this.statecheck)
-						}, 5000); // 假设倒计时时长为3000毫秒（3秒）
-					}
-				}
-			}
-		},
+		watch: {},
 		methods: {
 			cli() {
 				if (this.switch == false) {
 					this.switch = true;
-					console.log('开启连接');
 					this.gettt();
 				} else {
 					this.switch = false;
@@ -121,23 +176,23 @@
 				}
 			},
 			cli2() {
-				if (this.statecheck == 1) {
-					var payload = {
-						"params": "我是sdz"
-					};
-					let mes = 'hello world!'
-					device.publish(`/k0wn5IfGa5O/app_dev/thing/event/property/post`, mes, (res) => {
+				if (this.state == true) {
+					//上报设备属性 post
+					let mes = `{"params": {"led": 1}}`
+					device.publish(`/sys/k0wn5IfGa5O/app_dev/thing/event/property/post`, mes, (res) => {
 						console.log("发送消息：", mes)
+						uni.showToast({
+							title: "已发送浇水消息",
+							icon: 'success',
+							duration: 2000
+						})
 					});
-					device.on('error', (error) => {
-						console.error(error);
-					});
-				} else if (this.statecheck == 2) {
-					uni.showToast({
-						title: "网络缓冲，请稍候",
-						icon: 'none',
-						duration: 2000
-					})
+					// 上报设备属性 物模型
+					// device.postProps({
+					// 	led: 0
+					// }, (res) => {
+					// 	console.log("发送消息：", res);
+					// });
 				} else {
 					uni.showToast({
 						title: "您尚未连接",
@@ -145,39 +200,24 @@
 						duration: 2000
 					})
 				}
-
 			},
 			gettt() {
-				// 监听connect事件：建立MQTT连接，订阅自定义Topic，通过自定义Topic向物联网平台发送消息。
-				uni.showLoading({
-					title: "连接中",
-					mask: true,
+				this.state = true;
+				uni.showToast({
+					title: "已开启连接",
+					duration: 2500,
 				})
-				let num = 0
-				device.on('connect', (res) => {
-					//device.subscribe(`/k0wn5IfGa5O/app_dev/user/get`, () => {}); //shou
-					num++;
-					if (num == 1) {
-						uni.hideLoading();
-						uni.showToast({
-							title: "已开启连接",
-							duration: 2500,
-						})
-					}
-					console.log('连接监听中')
-					if(this.switch==true){
-						this.state = true;
-						this.statecheck = 1;
-					}
-					console.log("statecheck:", this.statecheck)
-				});
 				device.on('message', (message) => {
 					console.log('接收信息：', message);
 				});
 			},
 			closeee() {
 				this.state = false;
-				this.statecheck = 0;
+				uni.showToast({
+					title: "连接关闭",
+					duration: 2500,
+					icon: "none"
+				})
 				console.log('连接关闭，device:', device)
 			},
 		}
@@ -190,7 +230,9 @@
 		flex-direction: column;
 	}
 
-	.content .switch {}
+	.content .switch {
+		font-size: 18px;
+	}
 
 	.content .send {}
 
@@ -200,7 +242,7 @@
 	}
 
 	.good {
-		color: green;
+		color: limegreen;
 	}
 
 	.bad {
@@ -209,5 +251,10 @@
 
 	.neutral {
 		color: grey;
+	}
+
+	.dapeng-data {
+		display: flex;
+		flex-direction: column;
 	}
 </style>
