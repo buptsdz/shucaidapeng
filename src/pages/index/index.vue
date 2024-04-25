@@ -3,6 +3,7 @@
 		<view class="switch">
 			<text class="label-text">开关：</text>
 			<switch @tap="cli()" :checked="this.switch"></switch>
+		
 		</view>
 		<view class="connect">
 			连接状态：
