@@ -1,35 +1,54 @@
 <template>
 	<view class="content">
-		<view class="switch">
-			<text class="label-text">开关：</text>
-			<switch @tap="cli()" :checked="this.switch"></switch>
+		<!-- 页面标题 -->
+		<view class="page-title">
+			<text>智能温室监控系统</text>
+		</view>
 		
-		</view>
-		<view class="connect">
-			连接状态：
-			<view :class="['label', labelClass]">
-				{{ labelText }}
+		<!-- 开关、连接状态、发送浇水信息 -->
+		<view class="control-card">
+			<view class="control-item">
+				<text class="control-label">开关：</text>
+				<switch class="control-switch" @change="cli" :checked="switchState" />
+			</view>
+			<view class="control-item">
+				<text class="control-label">连接状态：</text>
+				<text :class="['control-value', connectionStatusClass]">{{ connectionStatusLabel }}</text>
+			</view>
+			<view class="control-item">
+				<button class="control-button" @click="cli2">发送浇水信息</button>
 			</view>
 		</view>
-		<view class="send">
-			<text class="label-text">发送：</text>
-			<button @tap="cli2()">发送浇水信息</button>
+		
+		<!-- 大棚温度、大棚湿度、土壤湿度、光照强度 -->
+		<view class="data-cards">
+			<view class="data-row">
+				<view class="data-card">
+					<text class="data-label">大棚温度</text>
+					<text class="data-value">{{ tempFormatted }}℃</text>
+				</view>
+				<view class="data-card">
+					<text class="data-label">大棚湿度</text>
+					<text class="data-value">{{ airHumidityFormatted }}%</text>
+				</view>
+			</view>
+			<view class="data-row">
+				<view class="data-card">
+					<text class="data-label">土壤湿度</text>
+					<text class="data-value">{{ soilHumidityFormatted }}%</text>
+				</view>
+				<view class="data-card">
+					<text class="data-label">光照强度</text>
+					<text class="data-value">{{ lightFormatted }} lx</text>
+				</view>
+			</view>
 		</view>
-		<view class="dapeng-data">
-			<view class="temp">
-				大棚温度：{{ tempFormatted }}
-			</view>
-			<view class="soilwet">
-				土壤湿度：{{ soilHumidityFormatted }}
-			</view>
-			<view class="wet">
-				大棚湿度：{{ airHumidityFormatted }}
-			</view>
-			<view class="light">
-				光照强度：{{ lightFormatted }}
-			</view>
-			<view class="lasttime">
-				数据更新时间：{{this.lasttime}}
+		
+		<!-- 数据更新时间 -->
+		<view class="update-time-card">
+			<view class="update-time">
+				<text class="data-label">数据更新时间：</text>
+				<text class="data-value">{{ lastUpdateTime }}</text>
 			</view>
 		</view>
 	</view>
@@ -227,35 +246,131 @@
 
 <style>
 	.content {
-		display: flex;
-		flex-direction: column;
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  padding: 20px;
+	  background-color: #f8f9fa; /* 更柔和的背景色 */
 	}
-
-	.content .switch {
-		font-size: 18px;
+	
+	.page-title {
+	  font-size: 24px;
+	  font-weight: bold;
+	  color: #28a745; /* 更鲜明的标题颜色 */
+	  text-align: center;
+	  margin-bottom: 30px;
 	}
-
-	.content .send {}
-
-	.connect {
-		display: flex;
-		flex-direction: row;
+	
+	.control-card {
+	  display: flex;
+	  flex-wrap: wrap;
+	  justify-content: center;
+	  width: 100%;
+	  margin-bottom: 30px;
 	}
-
-	.good {
-		color: limegreen;
+	
+	.control-item {
+	  display: flex;
+	  align-items: center;
+	  margin-bottom: 10px;
 	}
-
-	.bad {
-		color: red;
+	
+	.control-label {
+	  font-size: 16px;
+	  font-weight: bold;
+	  color: #333333;
+	  margin-right: 10px;
 	}
-
-	.neutral {
-		color: grey;
+	
+	.control-value {
+	  font-size: 18px;
+	  color: #555555;
 	}
-
-	.dapeng-data {
-		display: flex;
-		flex-direction: column;
+	
+	.control-switch {
+	  transform: scale(0.8);
+	}
+	
+	.control-button {
+	  background-color: #007bff;
+	  color: #ffffff;
+	  border: none;
+	  border-radius: 8px;
+	  padding: 10px 20px;
+	  font-size: 16px;
+	  font-weight: bold;
+	  text-align: center;
+	  text-decoration: none;
+	  display: inline-block;
+	  margin: 4px 2px;
+	  cursor: pointer;
+	  transition: background-color 0.3s ease; /* 按钮悬浮动画 */
+	}
+	
+	.control-button:hover {
+	  background-color: #0056b3;
+	}
+	
+	.data-cards {
+	  display: flex;
+	  flex-wrap: wrap;
+	  justify-content: space-between;
+	  width: 100%;
+	  margin-bottom: 30px;
+	}
+	
+	.data-row {
+	  display: flex;
+	  justify-content: space-between;
+	  width: 100%;
+	  margin-bottom: 20px;
+	}
+	
+	.data-card {
+	 display: flex;
+	 flex-direction: column;
+	 align-items: center;
+	 margin: 20px;
+	 padding: 20px;
+	 background-color: #ffffff;
+	 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 更深的阴影效果 */
+	 border-radius: 10px;
+	 width: 30%;
+	 transition: transform 0.3s ease; /* 卡片悬浮动画 */
+	}
+	
+	.data-card:hover {
+	  transform: translateY(-5px); /* 卡片悬浮动画 */
+	}
+	
+	.data-label {
+	  font-size: 18px;
+	  font-weight: bold;
+	  margin-bottom: 10px;
+	  color: #6c757d; /* 更深的文字颜色 */
+	}
+	
+	.data-value {
+	  font-size: 15px;
+	  font-weight: normal;
+	  color: #28a745; /* 更鲜明的数据颜色 */
+	}
+	
+	.update-time-card {
+	  width: 100%;
+	  margin-top: 20px; /* Add some space above the update time card */
+	}
+	
+	.update-time {
+	  display: flex;
+	  justify-content: space-between;
+	  width: 100%;
+	}
+	
+	@media (max-width: 768px) {
+	  .data-card {
+	    width: 100%;
+	    margin-bottom: 10px;
+	  }
 	}
 </style>
