@@ -2,7 +2,7 @@
 	<view class="content">
 		<view class="switch">
 			<text class="label-text">开关：</text>
-			<switch @tap="cli()" :checked="this.switch"></switch>
+			<switch @tap="openServer()" :checked="this.switch"></switch>
 		</view>
 		<view class="connect">
 			连接状态：
@@ -12,7 +12,7 @@
 		</view>
 		<view class="send">
 			<text class="label-text">发送：</text>
-			<button @tap="cli2()">发送浇水信息</button>
+			<button @tap="sendMess()">发送浇水信息</button>
 		</view>
 		<view class="dapeng-data">
 			<view class="temp">
@@ -44,6 +44,7 @@
 	const instanceId = 'iot-06z00dy7tlgz70q';
 	// 当前产品和设备所属地域的ID。
 	const regionId = 'cn-shanghai';
+	// #ifdef H5
 	const brokerUrl = instanceId ?
 		`wss://${instanceId}.mqtt.iothub.aliyuncs.com:443` :
 		`wss://${productKey}.iot-as-mqtt.${regionId}.aliyuncs.com:443`;
@@ -54,6 +55,19 @@
 		brokerUrl: `wss://${productKey}.iot-as-mqtt.${regionId}.aliyuncs.com:443`,
 		regionId: `${regionId}`
 	});
+	//#endif
+	// #ifdef APP-PLUS
+	const brokerUrl = instanceId ?
+		`wxs://${instanceId}.mqtt.iothub.aliyuncs.com:443` :
+		`wxs://${productKey}.iot-as-mqtt.${regionId}.aliyuncs.com:443`;
+	const device = iot.device({
+		productKey: `${productKey}`,
+		deviceName: `${deviceName}`,
+		deviceSecret: `${deviceSecret}`,
+		brokerUrl: `wxs://${productKey}.iot-as-mqtt.${regionId}.aliyuncs.com:443`,
+		regionId: `${regionId}`
+	});
+	//#endif
 	export default {
 		data() {
 			return {
@@ -65,8 +79,8 @@
 				soilHumidity: '', //土壤湿度
 				airHumidity: '', //空气湿度
 				temp: '', //温度
-				time: null,//接收到的esp8266的时间
-				publishwater:false,//是否正在发送浇水指令
+				time: null, //接收到的esp8266的时间
+				publishwater: false, //是否正在发送浇水指令
 			}
 		},
 		computed: {
@@ -166,7 +180,7 @@
 		},
 		watch: {},
 		methods: {
-			cli() {
+			openServer() {
 				if (this.switch == false) {
 					this.switch = true;
 					this.gettt();
@@ -175,14 +189,22 @@
 					this.closeee();
 				}
 			},
-			cli2() {
+			sendMess() {
 				if (this.state == true) {
 					//上报设备属性 post
-					let mes = `{"params": {"led": 1}}`
-					device.publish(`/sys/k0wn5IfGa5O/app_dev/thing/event/property/post`, mes, (res) => {
-						console.log("发送消息：", mes)
+					// let mes = `{"params": {"led":1}}`
+					// device.publish(`/sys/k0wn5IfGa5O/app_dev/thing/event/property/post`, mes, (res) => {
+					// 	console.log("发送消息：", mes)
+					// 	uni.showToast({
+					// 		title: "已发送浇水消息",
+					// 		icon: 'success',
+					// 		duration: 2000
+					// 	})
+					// });
+					device.subscribe(`/k0wn5IfGa5O/app_dev/user/get`, (res) => {
+						console.log("获取数据", res)
 						uni.showToast({
-							title: "已发送浇水消息",
+							title: "已获取最新数据",
 							icon: 'success',
 							duration: 2000
 						})
@@ -207,8 +229,8 @@
 					title: "已开启连接",
 					duration: 2500,
 				})
-				device.on('message', (message) => {
-					console.log('接收信息：', message);
+				device.on('message', (res) => {
+					console.log('接收信息url', res);
 				});
 			},
 			closeee() {
