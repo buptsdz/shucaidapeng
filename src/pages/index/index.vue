@@ -4,7 +4,6 @@
 		<view class="page-title">
 			<text>智能温室监控系统</text>
 		</view>
-
 		<!-- 开关、连接状态、发送浇水信息 -->
 		<view class="control-card">
 			<view class="control-item">
@@ -19,7 +18,6 @@
 				<button class="control-button" @click="sendMess">发送浇水信息</button>
 			</view>
 		</view>
-
 		<!-- 大棚温度、大棚湿度、土壤湿度、光照强度 -->
 		<view class="data-cards">
 			<view class="data-row">
@@ -29,21 +27,20 @@
 				</view>
 				<view class="data-card">
 					<text class="data-label">大棚湿度</text>
-					<text class="data-value">{{ airHumidityFormatted }}%</text>
+					<text class="data-value">{{ airHumidityFormatted }}</text>
 				</view>
 			</view>
 			<view class="data-row">
 				<view class="data-card">
 					<text class="data-label">土壤湿度</text>
-					<text class="data-value">{{ soilHumidityFormatted }}%</text>
+					<text class="data-value">{{ soilHumidityFormatted }}</text>
 				</view>
 				<view class="data-card">
 					<text class="data-label">光照强度</text>
-					<text class="data-value">{{ lightFormatted }} lx</text>
+					<text class="data-value">{{ lightFormatted }}</text>
 				</view>
 			</view>
 		</view>
-
 		<!-- 数据更新时间 -->
 		<view class="update-time-card">
 			<view class="update-time">
@@ -130,13 +127,13 @@
 				return this.temp ? `${this.temp.toFixed(2)}℃` : '暂无数据';
 			},
 			soilHumidityFormatted() {
-				return this.soilHumidity ? this.soilHumidity.toFixed(2) : '暂无数据';
+				return this.soilHumidity ? `${this.soilHumidity.toFixed(2)}%` : '暂无数据';
 			},
 			airHumidityFormatted() {
-				return this.airHumidity ? this.airHumidity.toFixed(2) : '暂无数据';
+				return this.airHumidity ? `${this.airHumidity.toFixed(2)}%` : '暂无数据';
 			},
 			lightFormatted() {
-				return this.light ? this.light.toFixed(2) : '暂无数据';
+				return this.light ? `${this.light.toFixed(2)}lx` : '暂无数据';
 			},
 			labelClass() {
 				// 根据statecheck的值返回对应的类名
@@ -170,7 +167,7 @@
 				console.error(error);
 			});
 			device.onProps((cmd) => {
-				console.log('>>>onProps', cmd); // 打印完整的属性设置消息
+				//console.log('>>>onProps', cmd); // 打印完整的属性设置消息
 				if (this.state) {
 					for (var key in cmd.items) {
 						switch (key) {
@@ -221,8 +218,8 @@
 							duration: 2000
 						})
 					});
-					// device.subscribe(`/k0wn5IfGa5O/app_dev/user/get`, (res) => {
-					// 	console.log("获取数据", res)
+					// device.subscribe(`/k0wn5IfGa5O/app_dev/user/get`,cmd,(res) => {
+					// 	console.log("获取数据", cmd)
 					// 	uni.showToast({
 					// 		title: "已获取最新数据",
 					// 		icon: 'success',
