@@ -31,17 +31,51 @@
 				username: '' // 假设这是用户注册时的名字
 			}
 		},
-		onLoad() {
-		    uni.getStorage({
-		        key: 'loggedInUser',
-		        success: res => {
-		            console.log(res.data);
-		            this.username = res.data.username;
-		        }
-		    });
-		  },
+		onShow() {
+			const loggedInUser = uni.getStorageSync('loggedInUser');
+			console.log("loggedInUser:", loggedInUser)
+			if (loggedInUser.username) {
+				this.username = loggedInUser.username;
+			} else {
+				this.username = "匿名用户";
+			}
+		},
+		onPullDownRefresh() {
+			const loggedInUser = uni.getStorageSync('loggedInUser');
+			console.log("loggedInUser:", loggedInUser)
+			if (loggedInUser.username) {
+				this.username = loggedInUser.username;
+			} else {
+				this.username = "匿名用户";
+			}
+			setTimeout(() => {
+				//结束下拉刷新
+				uni.stopPullDownRefresh();
+			}, 1000);
+		},
 		methods: {
+			goToSettings() {
+
+			},
+			goToHelp() {},
+			goToAbout() {},
 			logout() {
+				uni.removeStorage({
+					key: 'loggedInUser',
+					success: res => {
+						uni.showToast({
+							icon: 'success',
+							title: "已退出登录"
+						})
+					}
+				});
+				// uni.removeStorage({
+				// 	key:"historicalData",
+				// 	success: res => {
+				// 		console.log("已删除历史数据")
+				// 	}
+				// });
+				//uni.clearStorage();//清除所有缓存用
 				uni.navigateTo({
 					url: '/pages/login/login'
 				});

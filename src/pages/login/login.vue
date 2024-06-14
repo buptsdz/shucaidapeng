@@ -50,11 +50,12 @@
 				const users = uni.getStorageSync('users') || [];
 				const user = users.find(u => u.username === this.loginForm.username && u.password === this.loginForm
 					.password);
+				console.log(users,user);
 				if (user) {
+					uni.setStorageSync('loggedInUser', user);
 					uni.showToast({
 						title: '登录成功'
 					});
-					uni.setStorageSync('loggedInUser', user);
 					uni.switchTab({
 						url: "/pages/index/index"
 					});
