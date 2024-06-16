@@ -131,6 +131,7 @@
 					});
 				}
 			},
+			
 			handleDeleteNode() {
 				uni.showModal({
 					placeholderText: "请输入节点序号",
